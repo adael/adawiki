@@ -190,7 +190,7 @@ class Adawiki {
             $patterns['/\[(http\:\/\/[^\]]+)\]/iU'] = "<a href=\"\\1\" target='_blank'>\\1</a>";
 
             // Enlace interno normal
-            $patterns['/\[(?!http\:\/\/)([^\]]+)\]/eiU'] = "'<a href=\"index.php?m=ver&p=\\1\" class=\"' . (\$this->_filesize('\\1') ? 'existe':'noexiste') . '\" title=\"Tamaño: ' . \$this->_filesize('\\1') . '\">\\1</a>'";
+            $patterns['/\[(?!http\:\/\/)([^\]]+)\]/eiU'] = "'<a href=\"index.php?m=ver&p=\\1\" class=\"' . (\$this->_filesize('\\1') ? 'existe':'noexiste') . '\" title=\"Tama&ntilde;o: ' . \$this->_filesize('\\1') . '\">\\1</a>'";
 
             if(!$markdown) {
                 // Creo los <br /> para los saltos de linea
