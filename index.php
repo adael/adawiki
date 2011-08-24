@@ -1,4 +1,5 @@
 <?
+
 /*
   License:
   Adawiki
@@ -43,10 +44,16 @@
  * Markdown syntax available
  */
 
-session_start();
+define('DS', DIRECTORY_SEPARATOR);
+define('DEBUG', 1);
+define('POST', strcasecmp($_SERVER['REQUEST_METHOD'], 'POST'));
+define('ROOT', dirname(__FILE__) . DIRECTORY_SEPARATOR);
+define('PAGES', ROOT . 'pages' . DIRECTORY_SEPARATOR);
+define('FILE_EXT', '.txt');
+
 
 // Enable error display
-ini_set('display_errors', 1);
+ini_set('display_errors', DEBUG ? 1 : 0);
 
 // Disable magic quotes
 ini_set('magic_quotes_gpc', 'Off');
@@ -54,127 +61,17 @@ ini_set('magic_quotes_runtime', 'Off');
 ini_set('magic_quotes_sybase', 'Off');
 #set_magic_quotes_runtime(0);
 
-if(!isset($_SESSION["options"])){
-	$_SESSION["options"] = array(
-		'font-size' => 13
-	);
-}
+class AdaWikiController{
 
-if(isset($_GET["aumentarfuente"]))
-	$_SESSION["options"]["font-size"] += 2;
-elseif(isset($_GET["reducirfuente"]))
-	$_SESSION["options"]["font-size"] -= 2;
-elseif(isset($_GET["restablecerfuente"]))
-	$_SESSION["options"]["font-size"] = 13;
+	function index(){
+		$this->view();
+	}
 
-define('PAGES', dirname(__FILE__) . DIRECTORY_SEPARATOR . 'pages' . DIRECTORY_SEPARATOR);
-define('FILE_EXT', '.txt');
-
-/**
- * debug function
- */
-function prd(){
-	echo "<pre style='border: 1px solid black; padding: 3px; font-size: 11px; font-family: courier new; background: #EEE; color: #000;'>";
-	print_r(func_get_args());
-	echo "</pre>";
-	die();
-}
-
-class Adawiki{
-
-	private $method;
-	private $page;
-
-	function _init(){
-		$this->method = $this->_sget('m', 'ver');
-		$this->page = $this->_sget('p', 'indice');
-
-		ob_start();
-		if(strpos($this->method, '_') === 0 || !method_exists($this, $this->method)){
-			echo '<p>M&eacute;todo incorrecto</p>';
+	function view($page = "index"){
+		$fpath = $this->_filepath($page);
+		if(!is_file($fpath)){
+			redirect('edit/' . $page);
 		}else{
-			$method = $this->method;
-			$this->$method();
-		}
-		$content = ob_get_clean();
-		if(isset($_GET["print"]))
-			printLayout($content);
-		else
-			layout($content, $this->method, $this->page);
-	}
-
-	function _sget($key, $rval=null){
-		return isset($_GET[$key]) ? $_GET[$key] : $rval;
-	}
-
-	function _spost($key, $rval=null){
-		return isset($_POST[$key]) ? $_POST[$key] : $rval;
-	}
-
-	function _filepath($pagename = null){
-		if($pagename == null)
-			$pagename = $this->page;
-		return PAGES . base64_encode(substr($pagename, 0, 150)) . FILE_EXT;
-	}
-
-	function _filesize($pagename = null){
-		$path = $this->_filepath($pagename);
-		if(empty($path))
-			return 0;
-		return file_exists($path) ? $this->_format_bytes(filesize($path)) : 0;
-	}
-
-	function _format_bytes($bytes){
-		$s = array('B', 'Kb', 'MB', 'GB', 'TB', 'PB');
-		$e = floor(log($bytes) / log(1024));
-		return sprintf('%.2f ' . $s[$e], ($bytes / pow(1024, floor($e))));
-	}
-
-	function editar(){
-		$content = "";
-		$fpath = $this->_filepath();
-		if(file_exists($fpath)){
-			$content = file_get_contents($fpath);
-		}
-		echo "<form method='post' action='index.php?m=guardar&p=$this->page'>";
-		echo "<textarea class='page' rows='25' cols='80' name='content' onkeydown='insertTab(this, event);'>$content</textarea><br/>";
-		echo "<input type='submit' value='Guardar'>";
-		echo "</form>";
-		?>
-		<script>
-			function insertTab(o, e) {
-				var kC = e.keyCode ? e.keyCode : e.charCode ? e.charCode : e.which;
-				if (kC == 9 && !e.shiftKey && !e.ctrlKey && !e.altKey) {
-					var oS = o.scrollTop;
-					if (o.setSelectionRange) {
-						var sS = o.selectionStart;
-						var sE = o.selectionEnd;
-						o.value = o.value.substring(0, sS) + "\t" + o.value.substr(sE);
-						o.setSelectionRange(sS + 1, sS + 1);
-						o.focus();
-					} else if (o.createTextRange) {
-						document.selection.createRange().text = "\t";
-						e.returnValue = false;
-					}
-					o.scrollTop = oS;
-					if (e.preventDefault) {
-						e.preventDefault();
-					}
-					return false;
-				}
-				return true;
-			}
-		</script>
-		<?php
-	}
-
-	function ver(){
-		$content = "";
-		$fpath = $this->_filepath();
-		if(!file_exists($fpath)){
-			$this->editar();
-		}else{
-
 			// Compruebo si markdown está disponible
 			$markdown_path = dirname(__FILE__) . DIRECTORY_SEPARATOR . "markdown" . DIRECTORY_SEPARATOR . "markdown.php";
 			$markdown = is_file($markdown_path);
@@ -223,30 +120,55 @@ class Adawiki{
 			// Uso markdown si está disponible, para simplificarme la vida
 			if($markdown){
 				include($markdown_path);
+				if(is_callable('Markdown')){
+					$content = Markdown($content);
+				}
 			}
 
-			if(is_callable('Markdown')){
-				echo Markdown($content);
-			}else{
-				echo $content;
-			}
+			$this->_render('view', array('content' => &$content));
 		}
 	}
 
-	function guardar(){
-		if(isset($_POST['content'])){
-			$content = $this->_spost("content");
-			if(!is_dir(PAGES))
+	function edit($page = "index"){
+		if(POST){
+			if(!is_dir(PAGES)){
 				mkdir(PAGES);
-			$fpath = $this->_filepath();
+			}
+			$fpath = $this->_filepath($page);
 			file_put_contents($fpath, $content);
-			printf("<p id='saving-msg' class='saving'>Ok. %s bytes guardados en $this->page</p>", filesize($fpath));
-			echo "<script>setTimeout(function(){ $('#saving-msg').slideUp(); }, 3000);</script>";
+			flash('msg', array(true, sprintf("Ok. %s bytes guardados en $this->page", hfilesize($fpath))));
+			redirect("edit/$page");
 		}
-		$this->ver();
+		$content = "";
+		$fpath = $this->_filepath();
+		if(file_exists($fpath)){
+			$content = file_get_contents($fpath);
+		}
 	}
 
-	function eliminar(){
+	function manage(){
+		if(is_dir(PAGES)){
+			$pages = glob(PAGES . "*" . FILE_EXT);
+			foreach($pages as $k => $v){
+				$pages[$k] = $this->_filename($v);
+			}
+			natcasesort($pages);
+		}else{
+			$pages = array();
+		}
+	}
+
+	function rename($page){
+		if(empty($page)){
+			redirect("manage", "No se ha recibido la página", "error");
+		}
+		if(!empty($_POST['newname'])){
+			rename($this->_filepath($page), $this->_filepath($newname));
+			redirect("manage", "Ok. <b>$page</b> => <b>$newname</b>", "success");
+		}
+	}
+
+	function delete(){
 		$fpath = $this->_filepath();
 		if(file_exists($fpath)){
 			unlink($fpath);
@@ -257,99 +179,98 @@ class Adawiki{
 	}
 
 	function listar(){
-		if(is_dir(PAGES)){
-			$pages = glob(PAGES . "*" . FILE_EXT);
-			foreach($pages as $k => $v){
-				$v = preg_replace('/^' . preg_quote(PAGES) . '/i', '', $v);
-				$v = preg_replace('/' . preg_quote(FILE_EXT) . '$/i', '', $v);
-				$v = base64_decode($v);
-				$pages[$k] = $v;
-			}
-			natcasesort($pages);
-		}else{
-			$pages = array();
-		}
+
 	}
 
 	function renombrar(){
-		$newname = $this->_spost('newname', null);
-		if($newname == null){
-			echo "<form method='post' action='index.php?m=renombrar&p=$this->page'>";
-			echo "<p>Antiguo nombre: <b>$this->page</b></p>";
-			echo "<p>Nuevo nombre: <input name='newname' type='text' size='50' maxlength='150'> (Max. 150 caracteres)</p>";
-			echo "<input type='submit' value='enviar'>";
-			echo "</form>";
-		}else{
-			rename($this->_filepath(), $this->_filepath($newname));
-			echo "<p>Ok. <b>$this->page</b> => <b>$newname</b></p>";
-		}
+
 	}
 
 	function ayuda(){
 		ayuda();
 	}
 
-}
-
-function layout($content, $method, $page){
-}
-
-// End layout()
-
-function printLayout($content){
-	?>
-
-		<?
-	}
-
-	function ayuda(){
-		?>
-
-	<?
-}
-
-// End ayuda();
-
-function printCode($source){
-	return '<table border="0" cellpadding="0" class="code"><tr><td>' . highlight_string($source, true) . '</td></tr></table>';
-}
-
-/* dark_messenger84 at yahoo dot co dot uk
-  02-Sep-2007 10:31
-  Here's an improved version of supremacy2k at gmail dot com's code. It's a small
-  function that accepts either PHP syntax in plain text or from another script,
-  and then parses it into an ordered list with syntax highlighting.
- */
-
-function printPhpCode($source_code, $display_lines = false){
-
-	if(is_array($source_code))
-		return false;
-
-	$source_code = explode("\n", str_replace(array("\r\n", "\r"), "\n", $source_code));
-	$line_count = 1;
-	$formatted_code = "";
-	foreach($source_code as $code_line){
-		$formatted_code .= '<tr>';
-
-		if($display_lines)
-			$formatted_code .= '<td style="padding-right: 8px; border-right: 1px dashed #999;">' . $line_count . '</td>';
-		$line_count++;
-
-		$formatted_code .= '<td style="padding-left:4px;">';
-		if(preg_match('/<\?(php)?[^[:graph:]]/', $code_line)){
-			$formatted_code .= str_replace(array('<code>', '</code>'), '', highlight_string($code_line, true));
-		}else{
-			$formatted_code .= preg_replace('/(&lt;\?php&nbsp;)+/', '', str_replace(array('<code>', '</code>'), '', highlight_string('<?php ' . $code_line, true)));
+	private function _render($__view__, $__data__ = array()){
+		$this->$__last_view = ROOT . "views" . DIRECTORY_SEPARATOR . $__view__ . ".php";
+		if(!empty($__data__) && is_array($__data__)){
+			extract($__data__, EXTR_SKIP);
 		}
-		$formatted_code .= '</td></tr>';
+		unset($__view__, $__data__); # exclude from current scope not desired vars
+		if(is_file($this->$__last_view)){
+			ob_start();
+			include $this->$__last_view;
+			return ob_get_clean();
+		}else{
+			return "View not found: <b>$this->$__last_view</b>";
+		}
 	}
 
-	return '<table border="0" cellpadding="0" class="code">' . $formatted_code . '</table>';
+	private function _filepath($mame){
+		return PAGES . base64_encode(substr($name, 0, 150)) . FILE_EXT;
+	}
+
+	private function _filename($path){
+		$path = preg_replace('/^' . preg_quote(PAGES) . '/i', '', $path);
+		$path = preg_replace('/' . preg_quote(FILE_EXT) . '$/i', '', $path);
+		return base64_decode($path);
+	}
+
+	function _filesize($pagename = null){
+		return hfilesize($this->_filepath($pagename));
+	}
+
 }
 
-// End printCode
+/**
+ * debug function
+ */
+function prd(){
+	echo "<pre style='border: 1px solid black; padding: 3px; font-size: 11px; font-family: courier new; background: #EEE; color: #000;'>";
+	print_r(func_get_args());
+	echo "</pre>";
+	die();
+}
 
-$wiki = new Adawiki();
-$wiki->_init();
-?>
+function hfilesize($path){
+	$size = $path && is_file($path) ? filesize($path) : 0;
+	return format_bytes($size);
+}
+
+function format_bytes($bytes){
+	$s = array('B', 'Kb', 'MB', 'GB', 'TB', 'PB');
+	$e = floor(log($bytes) / log(1024));
+	return sprintf('%.2f ' . $s[$e], ($bytes / pow(1024, floor($e))));
+}
+
+function flash($key, $val = null){
+	if($val !== null){
+		$_SESSION[$key] = $val;
+	}elseif(!empty($_SESSION[$key])){
+		$v = $_SESSION[$key];
+		unset($_SESSION[$key]);
+	}
+}
+
+function redirect($url){
+	header('location: index.php/' . $url);
+	die();
+}
+
+function run(){
+	$parts = explode('/', $_GET['PATH_INFO']);
+	if(!empty($parts)){
+		$method = array_shift($parts);
+		$args = $parts;
+	}else{
+		$method = "index";
+		$args = array();
+	}
+
+	$c = new AdaWikiController();
+	if(is_callable(array($c, $method))){
+		call_user_func_array(array($c, $method), $args);
+	}
+}
+
+// runing run method
+run();

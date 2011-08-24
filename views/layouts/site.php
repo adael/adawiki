@@ -1,3 +1,38 @@
+<?php
+$tabitems = array(
+	array(
+		'text' => 'Ver',
+		'link' => 'index.php/view/' . $page,
+		'active' => ($metdod == 'guardar' || $method == 'ver'),
+		'visible' => $page != 'index',
+	),
+	array(
+		'text' => '&Iacute;ndice',
+		'link' => 'index.php/view/index',
+		'active' => ($metdod == 'guardar' || $method == 'ver'),
+		'visible' => $page == 'index',
+	),
+	array(
+		'text' => 'Editar',
+		'link' => 'index.php/edit/' . $page,
+		'active' => $method == 'edit',
+	),
+	array(
+		'text' => 'Ayuda',
+		'link' => 'index.php/help/',
+		'active' => $method == 'help',
+	)
+);
+
+$methodNames = array(
+	'view' => 'Ver',
+	'edit' => 'Editar',
+	'list' => 'Listar',
+	'help' => 'Ayuda',
+);
+
+$methodName = isset($methodNames[$method]) ? $methodNames[$method] : $method;
+?>
 <!DOCTYPE html>
 <html>
 	<head>
@@ -10,19 +45,18 @@
 		<div class="page-wrapper">
 			<div class='page-header'>
 				<div class="page-tabs">
-					<? if($page != 'indice'): ?>
-						<a class='tab <?php echo $method == 'ver' || $method == 'guardar' ? 'current' : '' ?>' href='index.php?m=ver&p=<?php echo $page ?>'>Ver</a>
-					<? else: ?>
-						<a class='tab <?php echo $method == 'ver' || $method == 'guardar' ? 'current' : '' ?>' href='index.php?m=ver&p=indice'>&Iacute;ndice</a>
-					<? endif; ?>
-					<a class='tab <?php echo $method == 'editar' ? 'current' : '' ?>' href='index.php?m=editar&p=<?php echo $page ?>'>Editar</a>
-					<a class='tab <?php echo $method == 'listar' ? 'current' : '' ?>' href='index.php?m=listar'>Listar</a>
-					<a class="tab <?php echo $method == 'ayuda' ? 'current' : '' ?>" href='index.php?m=ayuda'>Ayuda</a>
+					<?php
+					foreach($tabitems as $item){
+						if($item['visible']){
+							printf('<a href="%s" class="tab%s">%s</a>', $item['link'], $item['active'] ? ' current' : '', $item['text']);
+						}
+					}
+					?>
 				</div>
 				<div class="page-title">
-					Adawiki: <?php echo ucfirst($method) ?> <?php echo $method != 'ayuda' ? $page : ''; ?>
+					Adawiki: <?php echo ucfirst($methodName) ?> <?php echo $method != 'help' ? $page : ''; ?>
 				</div>
-				<br clear="all"/>
+				<br class="clear"/>
 			</div>
 			<div class="page-shadow">
 				<div class='page-content'>
@@ -30,7 +64,9 @@
 				</div>
 				<div class='page-footer'>
 					<div style="float: left;">
-						<a href='index.php?m=ver&p=<?php echo $page ?>&print=true'>Imprimir</a>
+						<?php if($method == 'view' || $method == 'help'): ?>
+							<a href='index.php/print/<?php echo $page ?>'>Imprimir</a>
+						<?php endif; ?>
 						-
 						Fuente:
 						<a href='index.php?m=<?php echo $method ?>&p=<?php echo $page ?>&aumentarfuente'>A</a> /
