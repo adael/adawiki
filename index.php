@@ -240,7 +240,8 @@ class Adawiki{
 				mkdir(PAGES);
 			$fpath = $this->_filepath();
 			file_put_contents($fpath, $content);
-			printf("<p class='saving'>Ok. %s bytes guardados en $this->page</p>", filesize($fpath));
+			printf("<p id='saving-msg' class='saving'>Ok. %s bytes guardados en $this->page</p>", filesize($fpath));
+			echo "<script>setTimeout(function(){ $('#saving-msg').slideUp(); }, 3000);</script>";
 		}
 		$this->ver();
 	}
@@ -268,20 +269,6 @@ class Adawiki{
 		}else{
 			$pages = array();
 		}
-
-		echo "<div class='page'>";
-		echo "<h1>Listado de p&aacute;ginas</h1>";
-		echo "<ul>";
-		foreach($pages as $v){
-			echo "<li>";
-			echo "[<a href='index.php?m=ver&p=$v'>Ver</a>] ";
-			echo "[<a href='index.php?m=editar&p=$v'>Editar</a>] ";
-			echo "[<a href='index.php?m=renombrar&p=$v'>Renombrar</a>] ";
-			echo "[<a href='index.php?m=eliminar&p=$v' onclick='return confirm(\"¿Seguro que desea eliminar esta p&aacute;gina?\");'>Eliminar</a>] ";
-			echo " - <a href='index.php?m=ver&p=$v'>$v</a>";
-			echo "</li>";
-		}
-		echo "</ul></div>";
 	}
 
 	function renombrar(){
@@ -305,283 +292,19 @@ class Adawiki{
 }
 
 function layout($content, $method, $page){
-	?>
-	<!DOCTYPE html>
-	<html>
-		<head>
-			<title>Wiki</title>
-			<style type='text/css'>
-				body {
-					font-family: "helvetica", "sans-serif";
-					font-size: <?= $_SESSION["options"]["font-size"] ?>px;
-					margin: 0; padding: 0;
-				}
-
-				.page-wrapper {
-					width: 90%;
-					min-width: 560px;
-					margin: 10px auto;
-					display: block;
-				}
-				.page-header {
-					display: block; clear: both;
-					color: #444;
-				}
-				.page-title {
-					float: left;
-					padding: 3px;
-					margin-left: 5px;
-					font-size: 21px;
-				}
-				.page-tabs {
-					float: right;
-					padding-top: 9px;
-				}
-				.page-tabs a.tab {
-					float: left;
-					padding: 3px 15px;
-					font-size: 13px;
-					-webkit-border-radius: 3px 3px 0 0;
-					color: #000;
-					cursor: pointer;
-					text-decoration: none;
-					margin-right: 5px;
-				}
-				.page-tabs a.tab:hover {
-					background: #F1F1F1;
-				}
-				.page-tabs a.current {
-					background: #999;
-					color: #FFF;
-				}
-				.page-tabs a.current:hover {
-					background: #999;
-				}
-				.page-shadow {
-					-webkit-border-radius: 5px;
-					-webkit-box-shadow: 0px 0px 5px #DDD;
-				}
-				.page-content {
-					margin: 0;
-					padding: 0px 8px;
-					border: 1px solid #999;
-					min-height: 350px;
-					-webkit-border-radius: 5px 5px 0 0;
-				}
-				.page-content a.existe {
-					color: blue;
-				}
-				.page-content a.noexiste {
-					color: gray;
-				}
-				.page-content h1 {
-					font-size: 21px;
-					margin: 16px 0 4px 0;
-					padding: 6px 12px;
-					background: #f1f1f1;
-					-webkit-border-radius: 5px;
-				}
-				.page-content h2 {
-					font-size: 19px;
-					margin: 8px 0 4px 0;
-				}
-				.page-content h3 {
-					font-size: 15px;
-					margin: 8px 0 4px 0;
-				}
-				.page-footer {
-					display: block;
-					padding: 5px;
-					text-align: right;
-					font-size: 13px;
-					background: #EEE; color: #666;
-					border: 1px solid #999;
-					border-top: 0;
-					-webkit-border-radius: 0 0 5px 5px;
-				}
-				.page-footer a{color: #222; text-decoration: none;}
-
-				textarea.page {
-					border: 1px solid #999;
-					font: 1em monospace;
-					display: block;
-					width: 98%;
-					background: #FAFAFA;
-					margin: 10px auto;
-					color: darkblue;
-				}
-				.page-wrapper .saving {
-					display: block; margin: -8px -8px 4px -8px; padding: 2px; text-align: left;
-					font-size: 11px; color: #339900; background: #E8FBE9;
-					border-bottom: 1px solid #444;
-				}
-				.indent { margin-left: 25px; } .indent2 { margin-left: 50px; }
-				code,.code { display: block; padding:4px; border:1px solid #999; background: #EEE; font-size: 13px; font-family: 'courier new' monospace; }
-				.red {color: red;} .blue {color: blue;} .green {color: green;} .gray {color: gray;}
-				.right {text-align: right;} .justify {text-align: justify;}
-			</style>
-		</head>
-		<body>
-			<div class="page-wrapper">
-				<div class='page-header'>
-					<div class="page-tabs">
-						<a class='tab <?= ($method == 'ver' && $page == 'indice') ? 'current' : '' ?>' href='index.php?m=ver&p=indice'>&Iacute;ndice</a>
-						<? if($page != 'indice'): ?>
-							<a class='tab <?= $method == 'ver' || $method == 'guardar' ? 'current' : '' ?>' href='index.php?m=ver&p=<?= $page ?>'>Ver</a>
-						<? endif; ?>
-						<a class='tab <?= $method == 'editar' ? 'current' : '' ?>' href='index.php?m=editar&p=<?= $page ?>'>Editar</a>
-						<a class='tab <?= $method == 'listar' ? 'current' : '' ?>' href='index.php?m=listar'>Listar</a>
-						<a class="tab <?= $method == 'ayuda' ? 'current' : '' ?>" href='index.php?m=ayuda'>Ayuda</a>
-					</div>
-					<div class="page-title">
-						Adawiki: <?= ucfirst($method) ?> <?= $method != 'ayuda' ? $page  : '';?>
-					</div>
-					<br clear="all"/>
-				</div>
-				<div class="page-shadow">
-					<div class='page-content'>
-						<?= $content ?>
-					</div>
-					<div class='page-footer'>
-						<div style="float: left;">
-							<a href='index.php?m=ver&p=<?= $page ?>&print=true'>Imprimir</a>
-							-
-							Fuente:
-							<a href='index.php?m=<?= $method ?>&p=<?= $page ?>&aumentarfuente'>A</a> /
-							<a href='index.php?m=<?= $method ?>&p=<?= $page ?>&reducirfuente'>a</a> /
-							<a href='index.php?m=<?= $method ?>&p=<?= $page ?>&restablecerfuente'>normal</a>
-						</div>
-						<div style="float:right;">
-							Adawiki v1.0 Por Carlos Gant
-						</div>
-						<br clear="all"/>
-					</div>
-				</div>
-			</div>
-		</body>
-	</html>
-	<?
 }
 
 // End layout()
 
 function printLayout($content){
 	?>
-	<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
-		"http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
-	<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
-		<html>
-			<head>
-				<meta http-equiv="content-type" content="text/html; charset=utf-8" />
-				<title>Wiki</title>
-				<style type='text/css'>
-					body {
-						font-family: "arial", "sans-serif";
-						text-align: justify;
-						font-size: 13px;
-					}
-					h1,h2,h3,h4,h5,h6 {
-						margin: 4px 0;
-						padding: 4px 0;
-						font-weight: bold;
-						text-align: left;
-					}
-					h1 {
-						text-align: center;
-						border-bottom: 2px solid #444;
-						font-size: 21px;
-						font-weight: bold;
-					}
-					h2 {
-						font-size: 19px;
-						color: #444;
-					}
-					h3 {
-						font-size: 17px;
-						color: #444;
-					}
-					h4 {
-					}
-					p {
-						text-indent: 25px;
-					}
-					.indent { margin-left: 25px; } .indent2 { margin-left: 50px; }
-				</style>
-			</head>
-			<body>
-				<?= $content ?>
-			</body>
-		</html>
+
 		<?
 	}
 
 	function ayuda(){
 		?>
-		<h1>Ayuda de Adawiki</h1>
 
-		<p>Adawiki ha sido ideado por desarrolladores y para desarrolladores</p>
-		<p>Sus caracter&iacute;sticas clave son:</p>
-		<ul>
-			<li> Un &uacute;nico fichero de script
-			<li> Sin instalaci&oacute;n
-			<li> Sin configuraci&oacute;n requerida
-			<li> F&aacute;cil de usar
-			<li> Autogestionable
-			<li> C&oacute;digo abierto
-		</ul>
-		<p>Toda funcionalidad adicional no se contempla, para ello hay montones de alternativas
-			muy buenas como <a href='http://www.mediawiki.com' target='_blank'>mediawiki</a>.</p>
-
-		<h3>Instalaci&oacute;n</h3>
-		<p>Copiar index.php dentro de una carpeta con permiso de escritura.</p>
-
-		<h3>Configuraci&oacute;n</h3>
-		<p>No es necesaria, s&oacute;lo hay que entrar desde el navegador al sitio donde hayas
-			instalado el wiki y te aparecer&aacute; una p&aacute;gina para crear el &iacute;ndice (o p&aacute;gina de inicio),
-			a partir de ah&iacute; podr&aacute;s utilizar de modo normal Adawik.
-			No osbtante el c&oacute;digo lo puedes toquetear para cambiar el estilo, colores,
-			agregar im&aacute;genes o funcionalidades.</p>
-
-		<h3>Seguridad</h3>
-		<p>Se delega a otros sistemas, yo recomiendo proteger el directorio con contrase&ntilde;a
-			mediante htaccess o similares.</p>
-
-		<h3>Funcionalidades</h3>
-		<p>Aunque son pocas, son realmente &uacute;tiles:
-
-		<ul>
-			<li><b>Nuevo!!:</b> Ahora con soporte para <a href='http://daringfireball.net/projects/markdown/'>markdown</a></li>
-			<li>Sobre todo se usar&aacute; HTML
-			<li>Si se introduce texto plano, los saltos de linea se respetan, pero s&oacute;lo uno por cada linea
-			<li><b>Enlaces internos: </b> para crear enlaces internos basta introducir el nombre
-				del fichero entre corchetes (como en mediawiki, pero solo con un corchete), osea:
-				[Mi fichero 1], vale cualquier caracter, tildes, e&ntilde;es, caracteres raros, comillas, etc.
-				Los nombres se codifican por lo que no hay que preocuparse. La &uacute;nica restricci&oacute;n
-				es que el nombre del fichero no puede superar los 150 caracteres.
-			<li><b>Enlaces externos: </b> Para crear enlaces externos basta con introducir el enlace
-				entre corchetes. Pero tiene que comenzar con "http://". Ej: [http://www.google.com]
-			<li><b>Categor&iacute;as: </b> en realidad no lo son, pero se me ocurre que dada la poca
-				o ninguna restricci&oacute;n a la hora de crear nombres de ficheros, para categorizarlos
-				podr&iacute;a ser [categoria - nombre de fichero] o bien [categoria:nombre de fichero].
-			<li><b>Lista r&aacute;pida: </b> si se utiliza el caracter * como primer caracter de una linea
-				se crea una lista (como esta que est&aacute;s viendo). Se pueden encadenar tantos * como se quiera
-				para hacer sublistas.
-				<ul><li>Ejemplo de una sublista</ul>
-			<li><b>Estilos css:</b> se pueden editar estilos en cada p&aacute;gina, dentro de la t&iacute;pica
-				etiqueta de &lt;style&gt;&lt;/style&gt; .
-			<li><b>Importacion de css:</b> Se pueden importar estilos css y aplicarlos a los
-				elementos, bien utilizando el import de css:
-				<code>&lt;style&gt;@import("/path/to/css.css");&lt;/style&gt;</code><br>
-				O bien utilizando el tipico link href
-				<code>&lt;link rel='stylesheet' type='text/css' href='/path/to/css.css' /&gt;</code>
-			<li><b>Codigo fuente:</b> Entre las etiquetas [code] y [/code] se puede poner
-				codigo fuente y se representará tal y como lo pones.
-			<li><b>Codigo fuente php:</b> entre las etiquetas [code php] y [/code] se puede
-				poner codigo fuente php y saldrá hasta con colorines.
-			<li><b>Autogesti&oacute;n: </b> desde la pesta&ntilde;a "Gestion" se pueden gestionar las distintas
-				p&aacute;ginas.
-		</ul>
-	</p>
 	<?
 }
 
