@@ -17,7 +17,7 @@ ini_set('display_errors', 1);
 ini_set('magic_quotes_gpc', 'Off');
 ini_set('magic_quotes_runtime', 'Off');
 ini_set('magic_quotes_sybase', 'Off');
-set_magic_quotes_runtime(0);
+#set_magic_quotes_runtime(0);
 
 if(!isset($_SESSION["options"])){
 	$_SESSION["options"] = array(
@@ -127,11 +127,12 @@ class Adawiki {
 		if(!file_exists($fpath)) {
 			$this->editar();
 		}else{
-			$content = file_get_contents($fpath);
 
-			// Compruebo si markdown est· disponible
-			$markdown_path = "markdown/markdown.php";
+			// Compruebo si markdown est√° disponible
+			$markdown_path = dirname(__FILE__) . "/markdown/markdown.php";
 			$markdown = is_file($markdown_path);
+
+			$content = file_get_contents($fpath);
 
 			$patterns = array();
 
@@ -152,7 +153,7 @@ class Adawiki {
 			$patterns['/\[(http\:\/\/[^\]]+)\]/iU'] = "<a href=\"\\1\" target='_blank'>\\1</a>";
 
 			// Enlace interno normal
-			$patterns['/\[(?!http\:\/\/)([^\]]+)\]/eiU'] = "'<a href=\"index.php?m=ver&p=\\1\" class=\"' . (\$this->_filesize('\\1') ? 'existe':'noexiste') . '\" title=\"TamaÒo: ' . \$this->_filesize('\\1') . '\">\\1</a>'";
+			$patterns['/\[(?!http\:\/\/)([^\]]+)\]/eiU'] = "'<a href=\"index.php?m=ver&p=\\1\" class=\"' . (\$this->_filesize('\\1') ? 'existe':'noexiste') . '\" title=\"Tama√±o: ' . \$this->_filesize('\\1') . '\">\\1</a>'";
 
 			if(!$markdown){
 				// Creo los <br /> para los saltos de linea
@@ -172,8 +173,8 @@ class Adawiki {
 				$content = preg_replace($pat, $rep, $content);
 			}
 
-			// Uso markdown si est· disponible, para simplificarme la vida
-			if($markdown && include($markdown_path) && method_exists('Markdown')){
+			// Uso markdown si est√° disponible, para simplificarme la vida
+			if($markdown && include($markdown_path) && is_callable('Markdown')){
 				echo Markdown($content);
 			}else{
 				echo $content;
@@ -225,7 +226,7 @@ class Adawiki {
 			echo "[<a href='index.php?m=ver&p=$v'>Ver</a>] ";
 			echo "[<a href='index.php?m=editar&p=$v'>Editar</a>] ";
 			echo "[<a href='index.php?m=renombrar&p=$v'>Renombrar</a>] ";
-			echo "[<a href='index.php?m=eliminar&p=$v' onclick='return confirm(\"øSeguro que desea eliminar esta p&aacute;gina?\");'>Eliminar</a>] ";
+			echo "[<a href='index.php?m=eliminar&p=$v' onclick='return confirm(\"¬øSeguro que desea eliminar esta p&aacute;gina?\");'>Eliminar</a>] ";
 			echo " - <a href='index.php?m=ver&p=$v'>$v</a>";
 			echo "</li>";
 		}
@@ -370,6 +371,7 @@ function printLayout($content){
 <html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
 <html>
 <head>
+<meta http-equiv="content-type" content="text/html; charset=utf-8" />
 <title>Wiki</title>
 <style type='text/css'>
 body {
@@ -472,9 +474,9 @@ elementos, bien utilizando el import de css:
 O bien utilizando el tipico link href
 <code>&lt;link rel='stylesheet' type='text/css' href='/path/to/css.css' /&gt;</code>
 <li><b>Codigo fuente:</b> Entre las etiquetas [code] y [/code] se puede poner
-codigo fuente y se representar· tal y como lo pones.
+codigo fuente y se representar√° tal y como lo pones.
 <li><b>Codigo fuente php:</b> entre las etiquetas [code php] y [/code] se puede
-poner codigo fuente php y saldr· hasta con colorines.
+poner codigo fuente php y saldr√° hasta con colorines.
 <li><b>Autogesti&oacute;n: </b> desde la pesta&ntilde;a "Gestion" se pueden gestionar las distintas
 p&aacute;ginas.
 </ul>
