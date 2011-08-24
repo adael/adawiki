@@ -3,7 +3,6 @@
 Adawiki is a single file wiki system that doesn't require any configuration.
 
 * clone proyect into a webroot folder
-* use your browser to acces that folder.
-* Done!
+* use your browser and enter the folder
 
 Alternatively you can just copy index.php file in a folder.
