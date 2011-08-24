@@ -129,6 +129,10 @@ class Adawiki {
 		}else{
 			$content = file_get_contents($fpath);
 
+			// Compruebo si markdown está disponible
+			$markdown_path = "markdown/markdown.php";
+			$markdown = is_file($markdown_path);
+
 			$patterns = array();
 
 			// Proceso las etiquetas code
@@ -150,25 +154,30 @@ class Adawiki {
 			// Enlace interno normal
 			$patterns['/\[(?!http\:\/\/)([^\]]+)\]/eiU'] = "'<a href=\"index.php?m=ver&p=\\1\" class=\"' . (\$this->_filesize('\\1') ? 'existe':'noexiste') . '\" title=\"Tamaño: ' . \$this->_filesize('\\1') . '\">\\1</a>'";
 
-			// Creo los <br /> para los saltos de linea
-			#$patterns['/([^\>\]])[\n\r]+$/im'] = '\\1<br />';
+			if(!$markdown){
+				// Creo los <br /> para los saltos de linea
+				$patterns['/([^\>\]])[\n\r]+$/im'] = '\\1<br />';
 
-			// Proceso las listas multiple (con truco)
-			#$patterns['/^\*\*\*(.*)/m'] = '<div class=indent2><li class=indent>\\1</li></div>';
+				// Proceso las listas multiple (con truco)
+				$patterns['/^\*\*\*(.*)/m'] = '<div class=indent2><li class=indent>\\1</li></div>';
 
-			// Proceso las listas multiple (con truco)
-			#$patterns['/^\*\*(.*)/m'] = '<div class=indent><li class=indent>\\1</li></div>';
+				// Proceso las listas multiple (con truco)
+				$patterns['/^\*\*(.*)/m'] = '<div class=indent><li class=indent>\\1</li></div>';
 
-			// Proceso las listas (con truco)
-			#$patterns['/^\*(.*)/m'] = '<li class=indent>\\1</li>';
+				// Proceso las listas (con truco)
+				$patterns['/^\*(.*)/m'] = '<li class=indent>\\1</li>';
+			}
 
 			foreach($patterns as $pat => $rep){
 				$content = preg_replace($pat, $rep, $content);
 			}
 
-			// Uso markdown para simplificarme la vida
-			include_once "markdown.php";
-			echo Markdown($content);
+			// Uso markdown si está disponible, para simplificarme la vida
+			if($markdown && include($markdown_path) && method_exists('Markdown')){
+				echo Markdown($content);
+			}else{
+				echo $content;
+			}
 		}
 	}
 
