@@ -394,7 +394,7 @@ function layout($content, $method, $page) {
                     </div>
                     <div id='footer'>
                         Adawiki v1.0 Por Carlos Gant (adaelxp@gmail.com)
-                        - [<a href='http://www.adael.es' target='_blank'>www.adael.es</a>]
+                        -
                         [Fuente
                         <a href='index.php?m=<?= $method ?>&p=<?= $page ?>&aumentarfuente'>A</a> /
                         <a href='index.php?m=<?= $method ?>&p=<?= $page ?>&reducirfuente'>a</a> /
