@@ -46,11 +46,11 @@
 
 define('DS', DIRECTORY_SEPARATOR);
 define('DEBUG', 1);
-define('POST', strcasecmp($_SERVER['REQUEST_METHOD'], 'POST'));
-define('ROOT', dirname(__FILE__) . DIRECTORY_SEPARATOR);
-define('PAGES', ROOT . 'pages' . DIRECTORY_SEPARATOR);
+define('POST', strcasecmp(getenv('REQUEST_METHOD'), 'post') == 0);
+define('ROOT', dirname(__FILE__) . DS);
+define('WROOT', dirname($_SERVER['SCRIPT_NAME']));
+define('PAGES', ROOT . 'pages' . DS);
 define('FILE_EXT', '.txt');
-
 
 // Enable error display
 ini_set('display_errors', DEBUG ? 1 : 0);
@@ -61,10 +61,12 @@ ini_set('magic_quotes_runtime', 'Off');
 ini_set('magic_quotes_sybase', 'Off');
 #set_magic_quotes_runtime(0);
 
+header('Content-Type: text/html; charset=utf-8');
+
 class AdaWikiController{
 
 	function index(){
-		$this->view();
+		redirect('view/index');
 	}
 
 	function view($page = "index"){
@@ -73,22 +75,12 @@ class AdaWikiController{
 			redirect('edit/' . $page);
 		}else{
 			// Compruebo si markdown está disponible
-			$markdown_path = dirname(__FILE__) . DIRECTORY_SEPARATOR . "markdown" . DIRECTORY_SEPARATOR . "markdown.php";
+			$markdown_path = dirname(__FILE__) . DS . "markdown" . DS . "markdown.php";
 			$markdown = is_file($markdown_path);
 
 			$content = file_get_contents($fpath);
 
 			$patterns = array();
-
-			// Proceso las etiquetas code
-			$patterns['/\[code\](.*)\[\/code\]/iseU'] = "printCode(trim('\\1'))";
-
-			// Proceso las etiquetas code php
-			//$patterns['/\[code php\](.*)\[\/code\]/iseU'] = "'<span class=code>'.highlight_string('\\1', true).'</span>'";
-			$patterns['/\[code php\](.*)\[\/code\]/iseU'] = "printPhpCode(trim('\\1'))";
-
-			// Etiquetas sha1
-			$patterns['/\[sha1\](.*)\[\/sha1\]/iseU'] = "sha1('\\1')";
 
 			// Enlace externo con alias
 			$patterns['/\[(.+)\|(http\:\/\/[^\]]+)\]/iU'] = "<a href=\"\\2\" target='_blank'>\\1</a>";
@@ -98,20 +90,6 @@ class AdaWikiController{
 
 			// Enlace interno normal
 			$patterns['/\[(?!http\:\/\/)([^\]]+)\]/eiU'] = "'<a href=\"index.php?m=ver&p=\\1\" class=\"' . (\$this->_filesize('\\1') ? 'existe':'noexiste') . '\" title=\"Tama&ntilde;o: ' . \$this->_filesize('\\1') . '\">\\1</a>'";
-
-			if(!$markdown){
-				// Creo los <br /> para los saltos de linea
-				$patterns['/([^\>\]])[\n\r]+$/im'] = '\\1<br />';
-
-				// Proceso las listas multiple (con truco)
-				$patterns['/^\*\*\*(.*)/m'] = '<div class=indent2><li class=indent>\\1</li></div>';
-
-				// Proceso las listas multiple (con truco)
-				$patterns['/^\*\*(.*)/m'] = '<div class=indent><li class=indent>\\1</li></div>';
-
-				// Proceso las listas (con truco)
-				$patterns['/^\*(.*)/m'] = '<li class=indent>\\1</li>';
-			}
 
 			foreach($patterns as $pat => $rep){
 				$content = preg_replace($pat, $rep, $content);
@@ -139,11 +117,14 @@ class AdaWikiController{
 			flash('msg', array(true, sprintf("Ok. %s bytes guardados en $this->page", hfilesize($fpath))));
 			redirect("edit/$page");
 		}
-		$content = "";
-		$fpath = $this->_filepath();
-		if(file_exists($fpath)){
+		$fpath = $this->_filepath($page);
+		if(is_file($fpath)){
 			$content = file_get_contents($fpath);
+		}else{
+			$content = "";
 		}
+		$this->_render('edit', compact('content'));
+
 	}
 
 	function manage(){
@@ -191,7 +172,7 @@ class AdaWikiController{
 	}
 
 	private function _render($__view__, $__data__ = array()){
-		$this->$__last_view = ROOT . "views" . DIRECTORY_SEPARATOR . $__view__ . ".php";
+		$this->$__last_view = ROOT . "views" . DS . $__view__ . ".php";
 		if(!empty($__data__) && is_array($__data__)){
 			extract($__data__, EXTR_SKIP);
 		}
@@ -205,7 +186,7 @@ class AdaWikiController{
 		}
 	}
 
-	private function _filepath($mame){
+	private function _filepath($name){
 		return PAGES . base64_encode(substr($name, 0, 150)) . FILE_EXT;
 	}
 
@@ -252,12 +233,15 @@ function flash($key, $val = null){
 }
 
 function redirect($url){
-	header('location: index.php/' . $url);
+	$path = WROOT . '/index.php/' . $url;
+	header('location: ' . $path);
 	die();
 }
 
 function run(){
-	$parts = explode('/', $_GET['PATH_INFO']);
+	$parts = explode('/', getenv('PATH_INFO'));
+	$parts = array_filter($parts);
+
 	if(!empty($parts)){
 		$method = array_shift($parts);
 		$args = $parts;
@@ -269,6 +253,8 @@ function run(){
 	$c = new AdaWikiController();
 	if(is_callable(array($c, $method))){
 		call_user_func_array(array($c, $method), $args);
+	}else{
+		throw new exception("No method found: $method");
 	}
 }
 
