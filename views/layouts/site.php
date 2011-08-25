@@ -2,24 +2,24 @@
 $tabitems = array(
 	array(
 		'text' => 'Ver',
-		'link' => 'index.php/view/' . $page,
+		'link' => 'index.php?r=view/' . $page,
 		'active' => ($metdod == 'guardar' || $method == 'ver'),
 		'visible' => $page != 'index',
 	),
 	array(
 		'text' => '&Iacute;ndice',
-		'link' => 'index.php/view/index',
+		'link' => 'index.php?r=view/index',
 		'active' => ($metdod == 'guardar' || $method == 'ver'),
 		'visible' => $page == 'index',
 	),
 	array(
 		'text' => 'Editar',
-		'link' => 'index.php/edit/' . $page,
+		'link' => 'index.php?r=edit/' . $page,
 		'active' => $method == 'edit',
 	),
 	array(
 		'text' => 'Ayuda',
-		'link' => 'index.php/help/',
+		'link' => 'index.php?r=help/',
 		'active' => $method == 'help',
 	)
 );
@@ -65,16 +65,16 @@ $methodName = isset($methodNames[$method]) ? $methodNames[$method] : $method;
 				<div class='page-footer'>
 					<div style="float: left;">
 						<?php if($method == 'view' || $method == 'help'): ?>
-							<a href='index.php/print/<?php echo $page ?>'>Imprimir</a>
+							<a href='index.php?r=print/<?php echo $page ?>'>Imprimir</a>
 						<?php endif; ?>
 						-
 						Fuente:
-						<a href='index.php?m=<?php echo $method ?>&p=<?php echo $page ?>&aumentarfuente'>A</a> /
-						<a href='index.php?m=<?php echo $method ?>&p=<?php echo $page ?>&reducirfuente'>a</a> /
-						<a href='index.php?m=<?php echo $method ?>&p=<?php echo $page ?>&restablecerfuente'>normal</a>
+						<a href="#" class="font-bigger">A</a> /
+						<a href="#" class="font-smaller">a</a> /
+						<a href="#" class="font-reset">normal</a>
 					</div>
 					<div style="float:right;">
-						Adawiki v1.0 Por Carlos Gant
+						Adawiki v1.0 Por <a href="mailto:adaelxp@gmail.com">Carlos Gant</a>
 					</div>
 					<br class="clear"/>
 				</div>
